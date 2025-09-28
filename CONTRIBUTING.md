@@ -6,7 +6,7 @@
 
 ### Cú pháp:
 ```
-<type>(<scope>): <short summary>
+<type>: <short summary>
 ```
 
 ### Các `type` phổ biến
@@ -19,7 +19,7 @@
 - `chore:` → công việc phụ (config, build, tool…)
 - `perf:` → cải thiện **hiệu năng**
 - `ci:` → thay đổi **CI/CD config**
-
+ 
 ---
 
 ## 2. Branch Naming Convention
