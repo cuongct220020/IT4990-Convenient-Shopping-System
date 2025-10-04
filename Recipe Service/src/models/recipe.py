@@ -21,7 +21,7 @@ class RecipeUncountableIngredient(Base):
 class Recipe(Base):
     __tablename__ = "recipe"
 
-    recipe_id = Column(Integer, primary_key=True, autoincrement=True)
+    recipe_id = Column(Integer, primary_key=True)
     recipe_name = Column(String, nullable=False, unique=True)
     default_servings = Column(Integer, nullable=False)
     instructions = Column(Text, nullable=False)
