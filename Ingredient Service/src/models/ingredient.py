@@ -6,7 +6,7 @@ from core.database import Base
 ingredient_ingredienttag = Table(
     'ingredient_ingredienttag', Base.metadata,
     Column('ingredient_id', Integer, ForeignKey('ingredient.ingredient_id'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('ingredient_tag.tag_id'), primary_key=True)
+    Column('ingredient_tag_id', Integer, ForeignKey('ingredient_tag.ingredient_tag_id'), primary_key=True)
 )
 
 class Ingredient(Base):
