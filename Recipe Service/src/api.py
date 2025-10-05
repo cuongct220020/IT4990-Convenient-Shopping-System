@@ -13,8 +13,8 @@ router = APIRouter(prefix="/recipes", tags=["recipes"])
     status_code=status.HTTP_200_OK,
     description="Fetches and returns a list of all recipes with their details."
 )
-def get_all_recipes_api(db: Session = Depends(get_db)):
-    recipes = get_all_recipes(db)
+async def get_all_recipes_api(db: Session = Depends(get_db)):
+    recipes = await get_all_recipes(db)
     return recipes
 
 @router.post(
@@ -23,9 +23,9 @@ def get_all_recipes_api(db: Session = Depends(get_db)):
     status_code=status.HTTP_201_CREATED,
     description="Creates a new recipe with the provided details."
 )
-def create_recipe_api(recipe_in: RecipeIn, db: Session = Depends(get_db)):
+async def create_recipe_api(recipe_in: RecipeIn, db: Session = Depends(get_db)):
     try:
-        recipe = create_recipe(db, recipe_in)
+        recipe = await create_recipe(db, recipe_in)
         return recipe
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
