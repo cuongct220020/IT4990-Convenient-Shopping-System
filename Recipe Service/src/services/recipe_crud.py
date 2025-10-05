@@ -12,7 +12,7 @@ from schemas.recipe_schema import RecipeIn, RecipeOut, CountableIngredient, Unco
 Using async for lower coupling
 """
 
-INGREDIENT_SERVICE_URL = "http://127.0.0.1:8000/ingredients/"
+INGREDIENT_SERVICE_URL = "http://0.0.0.0:8000/ingredients/"
 
 async def fetch_ingredient_data() -> dict[int, dict]:
     async with httpx.AsyncClient() as client:
