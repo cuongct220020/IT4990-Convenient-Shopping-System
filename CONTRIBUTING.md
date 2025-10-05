@@ -53,7 +53,7 @@ bugfix/responsive-layout-mobile
 
 ### Title
 - Ngắn gọn, rõ ràng, theo format giống commit message
-- Ví dụ: `feat(auth): thêm đăng nhập Google`
+- Ví dụ: `feat: thêm đăng nhập Google`
 
 ## 4. Workflow Recommendations
 
