@@ -91,7 +91,7 @@ standard:
 | `build`    | Changes to the build system or external dependencies    |
 | `revert`   | Reverts a previous commit                               |
 
-Example: 
+#### Example: 
 - ``feat``: add user authentication module
 - ``fix``: resolve race condition in Kafka consumer
 - ``docs``: update contributing guide with commit rules
@@ -130,7 +130,7 @@ Follow these best practices:
 This project follows the [**Git Flow branching model**](https://nvie.com/posts/a-successful-git-branching-model/#hotfix-branches) to maintain stability and streamline collaboration.
 
 <p align="center">
-  <img src="images/git_flow_model.png" alt="Git Flow Model" width="50%">
+  <img src="../.github/images/git_flow_model.png" alt="Git Flow Model" width="50%">
 </p>
 
 ---
@@ -205,7 +205,7 @@ A repository must always include the following permanent branches:
 - **`develop`** — represents the latest development changes for the upcoming release.
 
 <p align="center">
-  <img src="images/main_branches.png" alt="Main Branches" width="50%">
+  <img src="../.github/images/main_branches.png" alt="Main Branches" width="50%">
 </p>
 
 ### Description
@@ -239,7 +239,7 @@ Feature branches are used to develop new features or major enhancements that may
 Regardless of their lifecycle, **feature branches must always merge back into `develop`.**
 
 <p align="center">
-  <img src="images/feature_branches.png" alt="Feature Branches" width="50%">
+  <img src="../.github/images/feature_branches.png" alt="Feature Branches" width="50%">
 </p>
 
 #### Rules:
@@ -275,12 +275,12 @@ Issue branches are used to fix bugs or issues scheduled for the next release.
 They are semantically different from feature branches but follow the same workflow.
 Like features, they must always merge back into develop.
 
-Rules:
+#### Rules:
 - Must branch from: develop
 - Must merge back into: develop
 - Naming convention: issue/<id>
 
-Workflow:
+#### Workflow:
 ```
 git checkout -b issue/<id> develop
 git push origin issue/<id>
@@ -308,14 +308,14 @@ For contributors without write access, submit your changes through a pull reques
 Hotfix branches are used for urgent fixes on production when something critical fails.
 They always branch from main and must be merged into both main and develop after completion.
 
-<p align="center"> <img src="images/hotfix_branches.png" alt="Hotfix Branches" width="50%"> </p>
+<p align="center"> <img src="../.github/images/hotfix_branches.png" alt="Hotfix Branches" width="50%"> </p>
 
-Rules:
+#### Rules:
 - Must branch from: main
 - Must merge back into: main and develop
 - Naming convention: hotfix/<id>
 
-Workflow:
+#### Workflow:
 - Create the branch:
     ```
     git checkout -b hotfix/<id> main
