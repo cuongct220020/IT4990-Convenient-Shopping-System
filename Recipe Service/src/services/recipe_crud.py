@@ -1,6 +1,7 @@
 from typing import List
 import httpx
 from sqlalchemy.orm import Session
+from enums.measurement_unit import MeasurementUnit
 from models.recipe import Recipe, RecipeCountableIngredient, RecipeUncountableIngredient
 from schemas.recipe_schema import RecipeIn, RecipeOut, CountableIngredient, UncountableIngredient
 
@@ -62,52 +63,64 @@ async def get_all_recipes(db: Session) -> List[RecipeOut]:
     return output
 
 async def create_recipe(db: Session, recipe_in: RecipeIn) -> RecipeOut:
-    ingredient_data = await fetch_ingredient_data()
+    try:
+        ingredient_data = await fetch_ingredient_data()
 
-    for ci in recipe_in.countable_ingredients:
-        data = ingredient_data.get(ci.ingredient_id, {})
-        if not data:
-            raise ValueError(f"Countable ingredient ID {ci.ingredient_id} does not exist.")
-        if data["countability"] != "countable":
-            raise ValueError(f"Ingredient ID {ci.ingredient_id} is uncountable.")
+        for ci in recipe_in.countable_ingredients:
+            data = ingredient_data.get(ci.ingredient_id)
+            if not data:
+                raise ValueError(f"Countable ingredient ID {ci.ingredient_id} does not exist.")
+            if data["countability"] != "countable":
+                raise ValueError(f"Ingredient ID {ci.ingredient_id} is uncountable.")
 
-    for ui in recipe_in.uncountable_ingredients:
-        data = ingredient_data.get(ui.ingredient_id, {})
-        if not data:
-            raise ValueError(f"Uncountable ingredient ID {ui.ingredient_id} does not exist.")
-        if data["countability"] != "uncountable":
-            raise ValueError(f"Ingredient ID {ui.ingredient_id} is countable.")
+        for ui in recipe_in.uncountable_ingredients:
+            data = ingredient_data.get(ui.ingredient_id)
+            if not data:
+                raise ValueError(f"Uncountable ingredient ID {ui.ingredient_id} does not exist.")
+            if data["countability"] != "uncountable":
+                raise ValueError(f"Ingredient ID {ui.ingredient_id} is countable.")
 
-    recipe = Recipe(
-        recipe_name=recipe_in.recipe_name,
-        default_servings=recipe_in.default_servings,
-        instructions=recipe_in.instructions
-    )
-    recipe.countable_ingredients = [
-        RecipeCountableIngredient(
-            ingredient_id=ci.ingredient_id,
-            quantity=ci.quantity
+        recipe = Recipe(
+            recipe_name=recipe_in.recipe_name,
+            default_servings=recipe_in.default_servings,
+            instructions=recipe_in.instructions
         )
-        for ci in recipe_in.countable_ingredients
-    ]
-    recipe.uncountable_ingredients = [
-        RecipeUncountableIngredient(
-            ingredient_id=ui.ingredient_id,
-            quantity=ui.quantity,
-            unit=ui.unit
-        )
-        for ui in recipe_in.uncountable_ingredients
-    ]
+        recipe.countable_ingredients = [
+            RecipeCountableIngredient(
+                ingredient_id=ci.ingredient_id,
+                quantity=ci.quantity)
+            for ci in recipe_in.countable_ingredients
+        ]
+        recipe.uncountable_ingredients = [
+            RecipeUncountableIngredient(
+                ingredient_id=ui.ingredient_id,
+                quantity=ui.quantity,
+                unit=MeasurementUnit[ui.unit]
+            )
+            for ui in recipe_in.uncountable_ingredients
+        ]
+    except ValueError as e:
+        raise e
+
     db.add(recipe)
     db.commit()
     db.refresh(recipe)
+
     return RecipeOut(
         recipe_id=recipe.recipe_id,
-        recipe_name=recipe.recipe_name,
-        default_servings=recipe.default_servings,
-        instructions=recipe.instructions,
-        countable_ingredients=recipe.countable_ingredient_list,
-        uncountable_ingredients=recipe.uncountable_ingredient_list
+        recipe_name=recipe_in.recipe_name,
+        default_servings=recipe_in.default_servings,
+        instructions=recipe_in.instructions,
+        countable_ingredients=recipe_in.countable_ingredients,
+        uncountable_ingredients=[
+            UncountableIngredient(
+                ingredient_id=ui.ingredient_id,
+                ingredient_name=ui.ingredient_name,
+                quantity=ui.quantity,
+                unit=ui.unit
+            )
+            for ui in recipe_in.uncountable_ingredients
+        ]
     )
 
 
