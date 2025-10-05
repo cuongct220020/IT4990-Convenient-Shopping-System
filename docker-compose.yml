@@ -1,0 +1,12 @@
+services:
+  ingredient-service:
+    build: ./Ingredient Service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - recipe-service
+
+  recipe-service:
+    build: ./Recipe Service
+    ports:
+      - "8001:8001"
