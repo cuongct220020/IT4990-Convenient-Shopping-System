@@ -1,7 +1,7 @@
 [
   {
     "recipe_name": "Canh chua cá lóc",
-    "default_servings": null,
+    "default_servings": 2,
     "instructions": "Làm sạch cá lóc, cắt khúc. Phi thơm hành tím, cho cà chua và thơm vào xào. Thêm nước, đun sôi rồi cho cá vào. Khi cá chín, thêm giá đỗ và rau ngổ, nêm nếm lại cho vừa miệng.",
     "countable_ingredients": [
       {
@@ -118,7 +118,7 @@
         "unit": "củ"
       },
       {
-        "ingredient_name": "tỏi băm",
+        "ingredient_name": "tỏi",
         "quantity": 3.0,
         "unit": "tép"
       }
@@ -145,16 +145,6 @@
         "unit": "muỗng canh"
       },
       {
-        "ingredient_name": "muối",
-        "quantity": null,
-        "unit": null
-      },
-      {
-        "ingredient_name": "hành",
-        "quantity": null,
-        "unit": null
-      },
-      {
         "ingredient_name": "nước",
         "quantity": 300.0,
         "unit": "ml"
@@ -162,8 +152,8 @@
     ]
   },
   {
-    "recipe_name": "Bún riêu cua",
-    "default_servings": null,
+    "recipe_name": "bún riêu cua",
+    "default_servings": 1,
     "instructions": "Giã cua, lọc lấy nước. Phi hành, xào cà chua, cho nước cua vào đun. Khi nước sôi, nêm mắm tôm, muối, đường cho vừa miệng. Thêm đậu phụ chiên, riêu cua và giò sống vào. Dọn ra bát, cho bún và hành lá lên trên.",
     "countable_ingredients": [
       {
