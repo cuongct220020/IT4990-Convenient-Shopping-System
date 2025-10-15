@@ -1,4 +1,4 @@
-# Python OOP Conventions - Quy ước lập trình hướng đối tượng
+# Python OOP Conventions
 
 ## 📋 Mục lục
 1. [Quy tắc đặt tên](#quy-tắc-đặt-tên)
