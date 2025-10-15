@@ -1,0 +1,4 @@
+[submodule "crawler/firecrawl"]
+	path = crawler/firecrawl
+	url = https://github.com/Ryu204/firecrawl
+	branch = main
