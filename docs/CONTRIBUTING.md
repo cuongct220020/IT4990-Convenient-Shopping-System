@@ -135,7 +135,7 @@ Follow these best practices:
 
 This project follows the [**Git Flow branching model**](https://nvie.com/posts/a-successful-git-branching-model/#hotfix-branches) to maintain stability and streamline collaboration.
 
-![git_flow_model.png](../images/git_flow_model.png)
+![git_flow_model.png](images/git_flow_model.png)
 
 ---
 
@@ -208,7 +208,7 @@ A repository must always include the following permanent branches:
 - **`main`** — represents the production-ready code.
 - **`develop`** — represents the latest development changes for the upcoming release.
 
-![main_branches.png](../images/main_branches.png)
+![main_branches.png](images/main_branches.png)
 
 ### Description
 
@@ -240,7 +240,7 @@ Each type serves a specific purpose and follows strict branching and merging rul
 Feature branches are used to develop new features or major enhancements that may span multiple release cycles.  
 Regardless of their lifecycle, **feature branches must always merge back into `develop`.**
 
-![feature_branches.png](../images/feature_branches.png)
+![feature_branches.png](images/feature_branches.png)
 
 #### Rules:
 - Must branch from: `develop`
@@ -308,7 +308,7 @@ For contributors without write access, submit your changes through a pull reques
 Hotfix branches are used for urgent fixes on production when something critical fails.
 They always branch from main and must be merged into both main and develop after completion.
 
-![hotfix_branches.png](../images/hotfix_branches.png)
+![hotfix_branches.png](images/hotfix_branches.png)
 
 #### Rules:
 - Must branch from: main
