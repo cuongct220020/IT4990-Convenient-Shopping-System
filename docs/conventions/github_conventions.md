@@ -1,3 +1,8 @@
+---
+layout: default
+title: "GitHub Conventions"
+---
+
 # 📝 Contributing Guidelines
 
 ## Table of Contents
