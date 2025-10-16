@@ -1,451 +1,351 @@
-# 🐍 Python OOP Conventions
+# Python OOP Conventions (Modern Typing)
 
-## 🎯 Goals
+## Table of Contents
+1. [Goals](#goals)
+2. [Naming Conventions](#1-naming-conventions)
+3. [Modern Type Hints](#2-modern-type-hints-python-311)
+4. [Standard Class Structure](#3-standard-class-structure)
+5. [General Principles](#4-general-principles)
+6. [Docstrings](#5-docstrings-google-style)
+7. [Code Organization](#6-code-organization)
+8. [Inheritance & Composition](#7-inheritance--composition)
+9. [SOLID Principles](#8-solid-principles-summary)
+10. [Type Checking Setup](#9-type-checking-setup)
+11. [Team Standards Checklist](#10-team-standards-checklist)
+
+## Goals
 - Write readable, maintainable code
-- Ensure consistency across the project
+- Ensure consistency across the project  
+- Follow Python 3.11+ typing standards
 - Support effective team collaboration
-
-**Remember**: Code for humans to read, not just for machines to execute. Consistency > Cleverness.
-
-## 📋 Table of Contents
-1. [Naming Conventions](#1-naming-conventions)
-2. [Standard Class Structure](#2-standard-class-structure)
-3. [General Principles](#3-general-principles)
-4. [Visibility (Public/Protected/Private)](#4-visibility)
-5. [Comments & Docstrings](#5-comments--docstrings)
-6. [Magic Methods](#6-magic-methods)
-7. [Constants & Configuration](#7-constants--configuration)
-8. [Code Organization](#8-code-organization)
-9. [Inheritance & Composition](#9-inheritance--composition)
-10. [Advanced Best Practices](#10-advanced-best-practices)
-11. [SOLID Principles](#11-solid-principles)
 
 ## 1. Naming Conventions
 
 | Component | Convention | Example |
 |-----------|-----------|---------|
 | Class | PascalCase | `ShoppingList`, `FoodItem` |
-| Method | snake_case | `add_to_cart()` |
-| Instance Attribute | snake_case | `expiry_date` |
-| Class Attribute | snake_case | `max_storage_days` |
-| Private Attribute/Method | `_prefix` | `_check_expiry()` |
-| Name Mangling | `__prefix` | `__user_token` |
+| Method/Function | snake_case | `add_item()`, `check_expiry()` |
+| Attribute | snake_case | `expiry_date`, `total_items` |
+| Protected | `_prefix` | `_validate_input()` |
+| Private | `__prefix` | `__password_hash` |
 | Constant | UPPER_CASE | `MAX_ITEMS = 100` |
-| Module (file) | snake_case | `food_storage.py` |
-| Package (folder) | snake_case | `shopping_management/` |
+| Type Alias | PascalCase | `UserId`, `JsonDict` |
+| Module/Package | snake_case | `food_storage.py`, `shopping_system/` |
 
-**Rules**:
-- Class names are nouns: `FoodItem`, `ShoppingList`
-- Method names are verbs: `add_item()`, `check_expiry()`
-- Avoid vague names: `MyClass`, `Manager`
-- Avoid unclear abbreviations: `fd` → `food`
+**Rules**: Class names are nouns, method names are verbs. Avoid vague names (`Manager`, `Helper`) and unclear abbreviations (`fd` → `food`).
 
----
 
-## 2. Standard Class Structure
+## 2. Modern Type Hints (Python 3.11+)
+
+### Built-in Generic Types (Python 3.9+)
+```python
+# ✅ Modern (use this)
+def process(items: list[str]) -> dict[str, int]:
+    return {item: len(item) for item in items}
+
+# ❌ Deprecated (don't use)
+from typing import List, Dict
+def process(items: List[str]) -> Dict[str, int]:
+    ...
+```
+
+### Union with `|` Operator (Python 3.10+)
+```python
+# ✅ Modern
+def find_user(user_id: int) -> User | None:
+    return database.get(user_id)
+
+# ❌ Old
+from typing import Optional, Union
+def find_user(user_id: int) -> Optional[User]:
+    ...
+```
+
+### Type Aliases with `TypeAlias`
+```python
+from typing import TypeAlias
+
+UserId: TypeAlias = int
+JsonDict: TypeAlias = dict[str, any]
+OptionalUser: TypeAlias = User | None
+```
+
+### `Self` Type (Python 3.11+)
+```python
+from typing import Self
+
+class FoodItem:
+    def set_quantity(self, qty: float) -> Self:
+        """Method chaining returns instance of same class."""
+        self.quantity = qty
+        return self
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> Self:
+        """Factory method."""
+        return cls(**data)
+```
+
+### Protocol for Structural Typing
+```python
+from typing import Protocol
+
+class Drawable(Protocol):
+    """Duck-typing interface without inheritance."""
+    def draw(self) -> None: ...
+
+class Closeable(Protocol):
+    def close(self) -> None: ...
+
+def cleanup(resource: Closeable) -> None:
+    """Works with any object that has close()."""
+    resource.close()
+```
+
+### TypedDict for Structured Data
+```python
+from typing import TypedDict, NotRequired
+
+class FoodItemData(TypedDict):
+    """Type-safe dictionary structure."""
+    name: str
+    quantity: float
+    unit: str
+    category: NotRequired[str]  # Optional field
+
+def create_food(data: FoodItemData) -> FoodItem:
+    return FoodItem(**data)
+```
+
+### Avoid `Any` Without Documentation
+```python
+# ❌ Bad
+def process(data: Any) -> Any:
+    return data
+
+# ✅ Good - document why Any is needed
+def legacy_api_call(payload: any) -> any:
+    """Call legacy API with arbitrary JSON.
+    
+    TODO(typing): Replace with Protocol when API schema is available.
+    """
+    return requests.post("/api", json=payload).json()
+```
+
+### ClassVar for Class Attributes
+```python
+from typing import ClassVar
+
+class FoodItem:
+    EXPIRY_WARNING_DAYS: ClassVar[int] = 3
+    _total_items: ClassVar[int] = 0
+    
+    def __init__(self, name: str) -> None:
+        self.name = name  # Instance attribute (no ClassVar)
+```
+
+### Final for Constants
+```python
+from typing import Final
+
+MAX_ITEMS: Final = 100
+API_URL: Final[str] = "https://api.example.com"
+
+@final
+def validate_item(item: FoodItem) -> bool:
+    """This method cannot be overridden."""
+    return item.quantity > 0
+```
+
+## 3. Standard Class Structure
 
 ```python
-from datetime import datetime, timedelta
-from typing import List, Optional
+from datetime import datetime
+from typing import Self, ClassVar
 
 class FoodItem:
     """
-    Represents a food item in the refrigerator.
+    Represents a food item.
     
     Attributes:
-        EXPIRY_WARNING_DAYS (int): Days to warn before expiration
-        name (str): Food name
-        quantity (float): Quantity
-        unit (str): Unit (kg, gram, liter, etc.)
-        expiry_date (datetime): Expiration date
-        category (str): Category (vegetables, meat, dry goods, etc.)
+        EXPIRY_WARNING_DAYS: Days before expiration warning
+        name: Item name
+        quantity: Amount available
     """
-
-    # ✅ 1. Class attributes
-    EXPIRY_WARNING_DAYS = 3
-    _total_items = 0
-
-    # ✅ 2. Constructor
+    
+    # 1. Class attributes with ClassVar
+    EXPIRY_WARNING_DAYS: ClassVar[int] = 3
+    _total_items: ClassVar[int] = 0
+    
+    # 2. Constructor with type hints
     def __init__(
-        self, 
-        name: str, 
-        quantity: float, 
-        unit: str,
-        expiry_date: datetime,
-        category: str = "Other"
-    ):
+        self,
+        name: str,
+        quantity: float,
+        expiry_date: datetime
+    ) -> None:
         """Initialize food item."""
         self.name = name
         self._quantity = quantity
-        self.unit = unit
         self.expiry_date = expiry_date
-        self.category = category
-        self.__purchase_date = datetime.now()
         FoodItem._total_items += 1
-
-    # ✅ 3. Magic/Dunder methods
+    
+    # 3. Magic methods
     def __str__(self) -> str:
-        """User-friendly string representation."""
-        return f"{self.name} ({self._quantity}{self.unit}) - Exp: {self.expiry_date.strftime('%m/%d/%Y')}"
-
+        return f"{self.name} ({self._quantity})"
+    
     def __repr__(self) -> str:
-        """Debug string representation."""
-        return f"FoodItem(name='{self.name}', quantity={self._quantity}, unit='{self.unit}')"
-
-    def __eq__(self, other) -> bool:
-        """Compare two food items by name and category."""
+        return f"FoodItem(name='{self.name}')"
+    
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, FoodItem):
             return NotImplemented
-        return self.name == other.name and self.category == other.category
-
-    def __lt__(self, other) -> bool:
-        """Compare for sorting by expiration date."""
-        if not isinstance(other, FoodItem):
-            return NotImplemented
-        return self.expiry_date < other.expiry_date
-
-    # ✅ 4. Properties (Pythonic getter/setter)
+        return self.name == other.name
+    
+    # 4. Properties
     @property
     def quantity(self) -> float:
-        """Return food quantity."""
+        """Get quantity."""
         return self._quantity
-
+    
     @quantity.setter
-    def quantity(self, value: float):
-        """Update quantity with validation."""
+    def quantity(self, value: float) -> None:
+        """Set quantity with validation."""
         if value < 0:
-            raise ValueError("Quantity cannot be negative.")
+            raise ValueError("Quantity cannot be negative")
         self._quantity = value
-
-    @property
-    def days_until_expiry(self) -> int:
-        """Calculate days until expiration."""
-        delta = self.expiry_date - datetime.now()
-        return delta.days
-
-    @property
-    def is_expiring_soon(self) -> bool:
-        """Check if food is expiring soon."""
-        return 0 <= self.days_until_expiry <= self.EXPIRY_WARNING_DAYS
-
+    
     @property
     def is_expired(self) -> bool:
-        """Check if food is expired."""
-        return self.days_until_expiry < 0
-
-    # ✅ 5. Public instance methods
-    def use(self, amount: float):
-        """
-        Use a certain amount of food.
-        
-        Args:
-            amount: Amount to use
-            
-        Raises:
-            ValueError: If insufficient quantity
-        """
+        """Check if expired."""
+        return datetime.now() > self.expiry_date
+    
+    # 5. Public methods
+    def use(self, amount: float) -> None:
+        """Use food amount."""
         if amount > self._quantity:
-            raise ValueError(f"Not enough {self.name}. Remaining: {self._quantity}{self.unit}")
-        if amount <= 0:
-            raise ValueError("Amount must be positive.")
+            raise ValueError(f"Insufficient quantity: {self._quantity}")
         self._quantity -= amount
-
-    def add_quantity(self, amount: float):
-        """Add food quantity."""
-        if amount <= 0:
-            raise ValueError("Amount must be positive.")
-        self._quantity += amount
-
-    # ✅ 6. Class methods
+    
+    # 6. Class methods with Self
     @classmethod
-    def from_dict(cls, data: dict) -> 'FoodItem':
-        """
-        Factory method: create FoodItem from dictionary.
-        
-        Args:
-            data: Dict containing food information
-            
-        Returns:
-            FoodItem instance
-        """
+    def from_dict(cls, data: dict) -> Self:
+        """Create from dictionary."""
         return cls(
             name=data['name'],
             quantity=data['quantity'],
-            unit=data['unit'],
-            expiry_date=datetime.fromisoformat(data['expiry_date']),
-            category=data.get('category', 'Other')
+            expiry_date=datetime.fromisoformat(data['expiry_date'])
         )
-
-    @classmethod
-    def get_total_items(cls) -> int:
-        """Return total number of food items created."""
-        return cls._total_items
-
-    # ✅ 7. Static methods
-    @staticmethod
-    def calculate_shelf_life(purchase_date: datetime, expiry_date: datetime) -> int:
-        """
-        Calculate shelf life (utility function).
-        
-        Args:
-            purchase_date: Purchase date
-            expiry_date: Expiration date
-            
-        Returns:
-            Number of days
-        """
-        delta = expiry_date - purchase_date
-        return delta.days
-
-    # ✅ 8. Protected methods
-    def _validate_expiry_date(self, date: datetime) -> bool:
-        """Validate expiration date."""
-        return date > datetime.now()
-
-    # ✅ 9. Private methods
-    def __log_usage(self, amount: float):
-        """Log food usage (very private)."""
-        pass
-```
-
----
-
-## 3. General Principles
-
-### ✅ Don't Write Java-style Getters/Setters
-
-❌ **Wrong** - Java style:
-```python
-class ShoppingList:
-    def get_total_items(self):
-        return self._total_items
     
-    def set_total_items(self, value):
-        self._total_items = value
+    # 7. Static methods
+    @staticmethod
+    def calculate_shelf_life(
+        start: datetime,
+        end: datetime
+    ) -> int:
+        """Calculate shelf life in days."""
+        return (end - start).days
+    
+    # 8. Protected methods
+    def _validate(self) -> bool:
+        """Internal validation."""
+        return self._quantity >= 0
 ```
 
-✅ **Correct** - Pythonic style:
+## 4. General Principles
+
+### Properties over Getters/Setters
 ```python
-class ShoppingList:
-    @property
-    def total_items(self) -> int:
-        """Total number of items in list."""
-        return len(self._items)
+# ❌ Java style
+def get_total_items(self) -> int:
+    return self._total_items
+
+# ✅ Pythonic
+@property
+def total_items(self) -> int:
+    return len(self._items)
 ```
 
-### ✅ Don't Overuse Double Underscore
-
-Only override when truly needed:
-- `__init__`, `__str__`, `__repr__`, `__eq__`, `__lt__`, `__len__`
-- `__enter__`, `__exit__` (context manager)
-- `__getitem__`, `__setitem__` (indexing)
-
-### ✅ Prefer Composition Over Inheritance
-
-❌ **Avoid** complex inheritance:
+### Composition over Inheritance
 ```python
+# ❌ Deep inheritance chain
 class Food: pass
 class PerishableFood(Food): pass
 class Vegetable(PerishableFood): pass
-class LeafyVegetable(Vegetable): pass
-```
 
-✅ **Use** composition when appropriate:
-```python
+# ✅ Composition
 class ExpiryTracker:
-    """Track expiration dates."""
-    def check_status(self, food_item: FoodItem) -> str:
-        if food_item.is_expired:
-            return "Expired"
-        elif food_item.is_expiring_soon:
-            return "Expiring Soon"
-        return "Good"
+    def check_status(self, food: FoodItem) -> str:
+        return "Expired" if food.is_expired else "Good"
 
 class Refrigerator:
-    def __init__(self):
-        self.expiry_tracker = ExpiryTracker()  # Has-a relationship
-        self._items: List[FoodItem] = []
+    def __init__(self) -> None:
+        self.tracker = ExpiryTracker()  # Has-a relationship
+        self._items: list[FoodItem] = []
 ```
 
----
-
-## 4. Visibility
-
-| Level | Notation | Purpose |
-|-------|----------|---------|
-| Public | `attribute` | Public API |
-| Protected | `_attribute` | Internal use, subclasses |
-| Private | `__attribute` | Avoid override, name mangling |
-
+### Visibility Levels
 ```python
 class UserAccount:
-    def __init__(self, username: str):
+    def __init__(self, username: str) -> None:
         self.username = username              # Public
-        self._shopping_lists = []             # Protected
-        self.__password_hash = "encrypted"    # Private (name mangling)
+        self._password_hash = "..."           # Protected
+        self.__pin_code = "0000"              # Private (name mangling)
 ```
 
-**Note**: Python doesn't have true private. `_` and `__` are conventions!
-
----
-
-## 5. Comments & Docstrings
-
-### Standard Docstring (Google Style)
+## 5. Docstrings (Google Style)
 
 ```python
-from typing import List
-from datetime import datetime
-
-class MealPlanner:
+def suggest_recipes(
+    self,
+    refrigerator: 'Refrigerator',
+    min_ingredients: int = 3
+) -> list[str]:
     """
-    Manage meal plans for families.
+    Suggest recipes based on fridge contents.
     
-    Attributes:
-        user_id (str): User ID
-        meal_plans (List[MealPlan]): List of meal plans
-        MAX_PLANS_PER_WEEK (int): Maximum plans per week
+    Args:
+        refrigerator: Refrigerator with available food
+        min_ingredients: Minimum required ingredients (default 3)
     
-    Example:
-        >>> planner = MealPlanner("user123")
-        >>> planner.create_weekly_plan(start_date=datetime.now())
+    Returns:
+        List of recipe names
+    
+    Raises:
+        ValueError: If min_ingredients < 1
+        EmptyFridgeError: If refrigerator empty
+    
+    Note:
+        Prioritizes recipes using soon-to-expire ingredients.
     """
-
-    MAX_PLANS_PER_WEEK = 21  # 3 meals/day * 7 days
-
-    def suggest_recipes(
-        self, 
-        refrigerator: 'Refrigerator',
-        min_ingredients: int = 3
-    ) -> List[str]:
-        """
-        Suggest recipes based on fridge contents.
-        
-        Args:
-            refrigerator: Refrigerator object containing food
-            min_ingredients: Minimum ingredients required (default 3)
-        
-        Returns:
-            List of recipe names that can be cooked
-        
-        Raises:
-            ValueError: If min_ingredients < 1
-            EmptyFridgeError: If refrigerator is empty
-        
-        Note:
-            - Prioritizes recipes using soon-to-expire ingredients
-        """
-        if min_ingredients < 1:
-            raise ValueError("Min ingredients must be >= 1")
-        
-        # TODO: Integrate AI for smarter suggestions
-        # FIXME: Handle multiple items with same name but different units
-        # NOTE: This feature will be expanded in v2.0
-        
-        return self._match_recipes(available_foods, min_ingredients)
+    if min_ingredients < 1:
+        raise ValueError("min_ingredients must be >= 1")
+    return self._find_recipes(refrigerator, min_ingredients)
 ```
 
----
+## 6. Code Organization
 
-## 6. Magic Methods
-
-| Method | Purpose | Example |
-|--------|---------|---------|
-| `__str__` | User-friendly string | `print(item)` |
-| `__repr__` | Debug string | `repr(item)` |
-| `__eq__`, `__lt__` | Comparison | `item1 == item2` |
-| `__len__` | Length | `len(fridge)` |
-| `__getitem__` | Indexing | `fridge[0]` |
-| `__contains__` | Membership | `'Tomato' in fridge` |
-| `__iter__` | Iterator | `for item in fridge:` |
-
-```python
-class ShoppingList:
-    def __str__(self) -> str:
-        return f"📝 List: {self.name}\n{items_str}"
-    
-    def __len__(self) -> int:
-        return len(self._items)
-    
-    def __getitem__(self, index: int) -> dict:
-        return self._items[index]
-    
-    def __contains__(self, item_name: str) -> bool:
-        return any(item['name'] == item_name for item in self._items)
-    
-    def __iter__(self):
-        return iter(self._items)
-```
-
----
-
-## 7. Constants & Configuration
-
-Write in UPPER_CASE:
-
-```python
-# config.py
-DEFAULT_EXPIRY_WARNING_DAYS = 3
-MAX_ITEMS_PER_SHOPPING_LIST = 100
-MAX_STORAGE_DAYS = 365
-
-FOOD_CATEGORIES = [
-    "Vegetables",
-    "Meat",
-    "Dry Goods",
-    "Beverages",
-    "Other"
-]
-
-class SystemConfig:
-    DATABASE_URL = "postgresql://localhost/shopping_system"
-    CACHE_TIMEOUT = 300  # seconds
-    MAX_CONCURRENT_USERS = 1000
-```
-
-**Don't hardcode in functions**:
-
-❌ Wrong:
-```python
-def check_expiry(self, food_item):
-    if food_item.days_until_expiry <= 3:  # Magic number!
-        return "Expiring Soon"
-```
-
-✅ Correct:
-```python
-def check_expiry(self, food_item):
-    if food_item.days_until_expiry <= DEFAULT_EXPIRY_WARNING_DAYS:
-        return "Expiring Soon"
-```
-
----
-
-## 8. Code Organization
-
-### Import Order (PEP 8):
-
+### Import Order (PEP 8)
 ```python
 # 1. Standard library
-import os
 import json
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional
+from datetime import datetime
+from typing import TypeAlias, Protocol
+from collections.abc import Iterator
 
-# 2. Third-party libraries
+# 2. Third-party
 import requests
 from sqlalchemy import create_engine
 
-# 3. Internal project modules
-from .models import FoodItem, Recipe
-from .storage import Refrigerator
-from .config import MAX_PLANS_PER_WEEK
+# 3. Internal modules
+from .models import FoodItem
+from .config import MAX_ITEMS
 ```
 
-### Class Member Order:
-1. Class attributes
-2. `__init__` constructor
-3. Magic methods (`__str__`, `__repr__`, ...)
+### Class Member Order
+1. Class attributes (with `ClassVar`)
+2. `__init__`
+3. Magic methods (`__str__`, `__repr__`, `__eq__`, etc.)
 4. Properties (`@property`)
 5. Public methods
 6. Class methods (`@classmethod`)
@@ -453,325 +353,188 @@ from .config import MAX_PLANS_PER_WEEK
 8. Protected methods (`_method`)
 9. Private methods (`__method`)
 
-## 9. Inheritance & Composition
 
-### Proper Inheritance with ABC
+## 7. Inheritance & Composition
 
+### Abstract Base Classes
 ```python
 from abc import ABC, abstractmethod
 
-class FoodStorage(ABC):
-    """Abstract base class for food storage areas."""
+class Storage(ABC):
+    """Abstract base class for storage."""
     
-    def __init__(self, name: str, capacity: int):
-        self.name = name
+    def __init__(self, capacity: int) -> None:
         self.capacity = capacity
-        self._items: List[FoodItem] = []
+        self._items: list[FoodItem] = []
     
     @abstractmethod
     def add_item(self, item: FoodItem) -> bool:
-        """Must be implemented in subclass."""
-        pass
-    
-    @abstractmethod
-    def get_optimal_temperature(self) -> float:
-        """Optimal temperature for storage area."""
-        pass
-    
-    def remove_expired_items(self) -> List[FoodItem]:
-        """Common method for all storage types."""
-        expired = [item for item in self._items if item.is_expired]
-        self._items = [item for item in self._items if not item.is_expired]
-        return expired
+        """Must implement in subclass."""
+        ...
 
-class RefrigeratorCompartment(FoodStorage):
-    """Refrigerator compartment - cold storage."""
-    
+class Refrigerator(Storage):
     def add_item(self, item: FoodItem) -> bool:
-        if item.category not in ["Vegetables", "Meat", "Beverages"]:
+        if item.category not in ["Meat", "Vegetables"]:
             return False
         self._items.append(item)
         return True
-    
-    def get_optimal_temperature(self) -> float:
-        return 4.0  # Celsius
-
-class Pantry(FoodStorage):
-    """Pantry - dry goods storage."""
-    
-    def add_item(self, item: FoodItem) -> bool:
-        if item.category != "Dry Goods":
-            return False
-        self._items.append(item)
-        return True
-    
-    def get_optimal_temperature(self) -> float:
-        return 25.0  # Celsius
 ```
 
-### Composition Over Inheritance
-
+### Composition Example
 ```python
 class NotificationService:
-    """Send notifications."""
-    def send_expiry_alert(self, user_id: str, food_items: List[FoodItem]):
-        message = f"You have {len(food_items)} items expiring soon!"
-        print(f"[Notification to {user_id}] {message}")
-
-class InventoryTracker:
-    """Track food inventory."""
-    def calculate_usage_rate(self, item: FoodItem, days: int = 7) -> float:
-        return 0.5  # kg/day (example)
-    
-    def predict_restock_date(self, item: FoodItem) -> datetime:
-        usage_rate = self.calculate_usage_rate(item)
-        days_remaining = item.quantity / usage_rate if usage_rate > 0 else 999
-        return datetime.now() + timedelta(days=int(days_remaining))
+    def notify(self, user_id: str, message: str) -> None:
+        print(f"[{user_id}] {message}")
 
 class SmartRefrigerator:
-    """Smart refrigerator using composition."""
-    
-    def __init__(self, user_id: str):
+    def __init__(self, user_id: str) -> None:
         self.user_id = user_id
-        # Has-a relationships
-        self.main_compartment = RefrigeratorCompartment("Main")
-        self.notification_service = NotificationService()
-        self.inventory_tracker = InventoryTracker()
-        self._all_items: List[FoodItem] = []
+        self.notifier = NotificationService()  # Composition
+        self._items: list[FoodItem] = []
     
-    def check_and_notify_expiry(self):
-        expiring_soon = [item for item in self._all_items if item.is_expiring_soon]
-        if expiring_soon:
-            self.notification_service.send_expiry_alert(self.user_id, expiring_soon)
+    def check_expiry(self) -> None:
+        expired = [i for i in self._items if i.is_expired]
+        if expired:
+            self.notifier.notify(self.user_id, "Items expiring!")
 ```
 
----
+## 8. SOLID Principles (Summary)
 
-## 10. Advanced Best Practices
-
-### Type Hints (PEP 484)
-
+### S - Single Responsibility
 ```python
-from typing import List, Dict, Optional, Union, Tuple
-
-class ShoppingListManager:
-    def __init__(self):
-        self.lists: Dict[str, ShoppingList] = {}
-        self.history: List[Tuple[datetime, str]] = []
-    
-    def create_list(self, name: str, items: Optional[List[dict]] = None) -> ShoppingList:
-        """Create a new shopping list."""
-        new_list = ShoppingList(name)
-        if items:
-            for item in items:
-                new_list.add_item(item)
-        return new_list
-    
-    def get_list(self, name: str) -> Optional[ShoppingList]:
-        """Get list by name, returns None if not found."""
-        return self.lists.get(name)
-```
-
-### Context Managers
-
-```python
-class RefrigeratorSession:
-    """Context manager for refrigerator sessions."""
-    
-    def __init__(self, fridge: 'Refrigerator', user_id: str):
-        self.fridge = fridge
-        self.user_id = user_id
-        self.start_time = None
-        self.changes_made = []
-    
-    def __enter__(self) -> 'RefrigeratorSession':
-        self.start_time = datetime.now()
-        print(f"[{self.user_id}] Opened fridge at {self.start_time}")
-        return self
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        duration = (datetime.now() - self.start_time).total_seconds()
-        print(f"[{self.user_id}] Closed fridge after {duration:.1f}s")
-        print(f"Made {len(self.changes_made)} changes")
-        return False  # Don't suppress exceptions
-
-# Usage
-with RefrigeratorSession(fridge, "user123") as session:
-    session.add_item(tomato)
-    session.remove_item("old_item")
-```
-
-### Dataclasses (Python 3.7+)
-
-```python
-from dataclasses import dataclass, field
-
-@dataclass
-class ShoppingItem:
-    """Shopping item using dataclass."""
-    name: str
-    quantity: float
-    unit: str
-    category: str = "Other"
-    estimated_price: float = 0.0
-    is_purchased: bool = False
-    
-    def mark_purchased(self):
-        self.is_purchased = True
-    
-    def calculate_total_price(self) -> float:
-        return self.quantity * self.estimated_price
-
-# Auto-generates __init__, __repr__, __eq__
-item = ShoppingItem(name="Tomato", quantity=2.0, unit="kg", estimated_price=15000)
-```
-
----
-
-## 11. SOLID Principles
-
-### S - Single Responsibility Principle
-
-```python
-# ❌ Wrong - class has too many responsibilities
-class FoodManager:
-    def add_food(self, food): pass
-    def send_notification(self, food): pass
-    def save_to_database(self, food): pass
-    def create_pdf_report(self): pass
-
-# ✅ Correct - each class has one responsibility
+# Each class has ONE reason to change
 class FoodRepository:
-    """Only manages food storage in database."""
-    def save(self, food: FoodItem): pass
-    def find_by_id(self, food_id: str) -> Optional[FoodItem]: pass
+    """Only handles food storage."""
+    def save(self, food: FoodItem) -> None: ...
 
 class NotificationService:
-    """Only manages notifications."""
-    def send_expiry_alert(self, user_id: str, food: FoodItem): pass
-
-class ReportGenerator:
-    """Only generates reports."""
-    def create_weekly_report(self, user_id: str) -> str: pass
+    """Only handles notifications."""
+    def send_alert(self, msg: str) -> None: ...
 ```
 
-### O - Open/Closed Principle
-
+### O - Open/Closed
 ```python
 # Open for extension, closed for modification
-
 class PriceCalculator(ABC):
     @abstractmethod
-    def calculate(self, base_price: float, quantity: float) -> float:
-        pass
+    def calculate(self, price: float, qty: float) -> float: ...
 
-class StandardPriceCalculator(PriceCalculator):
-    def calculate(self, base_price: float, quantity: float) -> float:
-        return base_price * quantity
+class StandardCalculator(PriceCalculator):
+    def calculate(self, price: float, qty: float) -> float:
+        return price * qty
 
-class BulkDiscountCalculator(PriceCalculator):
-    def __init__(self, threshold: float, discount_percent: float):
-        self.threshold = threshold
-        self.discount_percent = discount_percent
+class DiscountCalculator(PriceCalculator):
+    def __init__(self, discount: float) -> None:
+        self.discount = discount
     
-    def calculate(self, base_price: float, quantity: float) -> float:
-        total = base_price * quantity
-        if quantity >= self.threshold:
-            total *= (1 - self.discount_percent / 100)
-        return total
-
-# Extend by adding new calculators, not modifying existing code
+    def calculate(self, price: float, qty: float) -> float:
+        total = price * qty
+        return total * (1 - self.discount)
 ```
 
-### L - Liskov Substitution Principle
-
+### L - Liskov Substitution
 ```python
-# Subclass must be substitutable for base class
-
+# Subclass replaces base class seamlessly
 class Storage(ABC):
     @abstractmethod
-    def can_store(self, item: FoodItem) -> bool:
-        pass
-    
-    @abstractmethod
-    def add_item(self, item: FoodItem) -> bool:
-        pass
+    def add_item(self, item: FoodItem) -> bool: ...
 
-class ColdStorage(Storage):
-    def can_store(self, item: FoodItem) -> bool:
-        return item.category in ["Vegetables", "Meat"]
-    
-    def add_item(self, item: FoodItem) -> bool:
-        if self.can_store(item):
-            self._items.append(item)
-            return True
-        return False
-
-# Any Storage subclass works with this function
-def store_items(storage: Storage, items: List[FoodItem]):
+def store_items(storage: Storage, items: list[FoodItem]) -> None:
+    """Works with ANY Storage subclass."""
     for item in items:
         storage.add_item(item)
 ```
 
-### I - Interface Segregation Principle
-
+### I - Interface Segregation
 ```python
-# Don't force clients to implement unnecessary methods
+# Use small Protocols instead of large interfaces
+class Readable(Protocol):
+    def read(self) -> str: ...
 
-# ✅ Correct - separate small interfaces
-class FoodOperations(ABC):
-    @abstractmethod
-    def add_food(self, food: FoodItem) -> bool: pass
-    @abstractmethod
-    def remove_food(self, food_id: str) -> bool: pass
+class Writable(Protocol):
+    def write(self, data: str) -> None: ...
 
-class ExpiryChecker(ABC):
-    @abstractmethod
-    def check_expiry(self, food: FoodItem) -> str: pass
-
-class ReportGenerator(ABC):
-    @abstractmethod
-    def generate_report(self) -> dict: pass
-
-# Class only implements what it needs
-class BasicStorage(FoodOperations):
-    # Only implements CRUD, not reports or expiry checks
-    pass
-
-class SmartStorage(FoodOperations, ExpiryChecker):
-    # Implements both interfaces
-    pass
+class TextEditor:
+    """Only needs what it uses."""
+    def edit(self, doc: Writable) -> None: ...
 ```
 
-### D - Dependency Inversion Principle
-
+### D - Dependency Inversion
 ```python
-# Depend on abstractions, not concrete implementations
-
-# ✅ Correct - depend on abstraction
-class Database(ABC):
-    @abstractmethod
-    def save(self, data: dict) -> bool: pass
-
-class PostgreSQLDatabase(Database):
-    def save(self, data: dict) -> bool:
-        print(f"Saving to PostgreSQL: {data}")
-        return True
-
-class MongoDBDatabase(Database):
-    def save(self, data: dict) -> bool:
-        print(f"Saving to MongoDB: {data}")
-        return True
+# Depend on abstractions, not concrete classes
+class Database(Protocol):
+    def save(self, data: dict) -> bool: ...
 
 class FoodManager:
-    def __init__(self, database: Database):  # Depend on abstraction
-        self.database = database
-    
-    def save_food(self, food: FoodItem) -> bool:
-        data = {'name': food.name, 'quantity': food.quantity}
-        return self.database.save(data)
+    def __init__(self, db: Database) -> None:  # Inject abstraction
+        self.db = db
 
-# Dependency injection - inject database in constructor
-manager1 = FoodManager(PostgreSQLDatabase())
-manager2 = FoodManager(MongoDBDatabase())
+# Can swap implementations
+manager = FoodManager(PostgreSQL())
+manager = FoodManager(MongoDB())
 ```
+
+## 9. Type Checking Setup
+
+### mypy Configuration (`pyproject.toml`)
+```toml
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "third_party.*"
+ignore_missing_imports = true
+```
+
+### Pyright Configuration (`pyrightconfig.json`)
+```json
+{
+  "include": ["src"],
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.11",
+  "reportMissingTypeStubs": false
+}
+```
+
+### Run Type Checking
+```bash
+mypy src/           # Run mypy
+pyright src/        # Or use pyright
+mypy --strict src/  # Enforce strict mode
+```
+
+## 10. Team Standards Checklist
+
+### Must Follow
+- Target Python 3.11+ minimum
+- Use built-in generics (`list`, `dict`, not `List`, `Dict`)
+- Use `|` for unions (not `Optional`, `Union`)
+- Annotate all public functions/methods
+- Use `Self` for methods returning instance
+- Use `Protocol` for duck typing
+- Use `TypedDict` for structured dicts
+- Use `Final` for constants
+- Enable mypy/pyright strict mode in CI
+- Document any use of `Any` with comment
+
+### Code Review Checklist
+- [ ] All public functions typed
+- [ ] Modern syntax (`list`, `dict`, `|` operators)
+- [ ] Using `Self` for method chaining
+- [ ] No `Any` without explanation
+- [ ] Type aliases use `TypeAlias`
+- [ ] Constants marked `Final`
+- [ ] Passes `mypy --strict`
+- [ ] Protocols used for interfaces
+- [ ] Google-style docstrings
+
+**Last Updated**: October 2025 (Python 3.11+ standards)
