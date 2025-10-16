@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Python OOP Conventions"
+---
+
 # Python OOP Conventions (Modern Typing)
 
 ## Table of Contents
