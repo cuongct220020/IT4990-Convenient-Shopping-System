@@ -1,8 +1,3 @@
----
-layout: default
-title: "GitHub Conventions"
----
-
 # 📝 Contributing Guidelines
 
 ## Table of Contents
@@ -169,8 +164,6 @@ This project follows the [**Git Flow branching model**](https://nvie.com/posts/a
     </tr>
   </tbody>
 </table>
-
----
 
 ### 2. Naming Convention
 ```
