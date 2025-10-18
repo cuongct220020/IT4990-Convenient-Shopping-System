@@ -1,3 +1,5 @@
+import traceback
+
 import streamlit as st
 
 from frontend_config import DOMAIN_PAGE_PER_PAGE
@@ -6,8 +8,8 @@ from web_service import WebService
 # region: Data and service initialization
 if "service" not in st.session_state:
     st.session_state.service = WebService()
-# region: Frontend
 
+# region: Frontend
 # --- App setup ---
 st.set_page_config(
     page_title="Scraper Dashboard",
@@ -82,9 +84,19 @@ elif section == "Add":
             try:
                 if domain:
                     service.database.add_domain(domain)
+                    # TODO: Use scrape operations on domain to find and crawl valuable pages
                     st.success(f"✅ Added domain: {domain}")
                 else:
-                    pass
+                    try:
+                        if service.is_page_url_crawled(url):
+                            st.info(f"URL already crawled: {url}")
+                        else:
+                            page = service.crawl_page_url(url)
+                            st.success(f"✅ Page {url} updated at {page.updated_at}")
+                    except ValueError as e:
+                        st.error(
+                            f"Failed to add: {e}. Details:\n\n{traceback.format_exc()}"
+                        )
             except RuntimeError as exc:
                 st.error(f"Failed to add: {exc}")
         else:

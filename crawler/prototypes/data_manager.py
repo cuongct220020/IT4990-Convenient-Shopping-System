@@ -283,3 +283,17 @@ class WebCrawlerDB:
                 total_pages=total_pages,
                 domains=domains,
             )
+
+    def page_exists(self, url: str) -> bool:
+        """Check if a page with the given URL exists."""
+        with Session(self.engine) as session:
+            stmt = select(Page).where(Page.url == url)
+            page = session.scalar(stmt)
+            return page is not None
+
+    def domain_exists(self, domain: str) -> bool:
+        """Check if a domain exists in the database."""
+        with Session(self.engine) as session:
+            stmt = select(Domain).where(Domain.domain == domain)
+            domain_obj = session.scalar(stmt)
+            return domain_obj is not None

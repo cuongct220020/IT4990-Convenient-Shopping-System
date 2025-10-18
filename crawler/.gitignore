@@ -1,0 +1,5 @@
+# Database
+sqlite/
+# Python
+__pycache__/
+.venv/
